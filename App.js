@@ -1,10 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { captureRef } from 'react-native-view-shot';
 import { useRef, useState } from 'react';
+import DomToImage from 'dom-to-image';
 
 import Button from './components/Button';
 import ImageViewer from './components/ImageViewer';
@@ -57,19 +58,36 @@ export default function App() {
   };
 
   const onSaveImageAsync = async () => {
-    try {
-      const localURI = await captureRef(imageRef, {
-        height: 440,
-        quality: 1,
-      });
+    if (Platform.OS !== 'web') {
+      try {
+        const localURI = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
 
-      await MediaLibrary.saveToLibraryAsync(localURI);
+        await MediaLibrary.saveToLibraryAsync(localURI);
 
-      if (localURI) {
-        alert('Image saved successfully!');
+        if (localURI) {
+          alert('Image saved successfully!');
+        }
+      } catch (error) {
+        alert('An error occurred. Please try again.');
       }
-    } catch (error) {
-      alert('An error occurred. Please try again.');
+    } else {
+      try {
+        const dataURL = await DomToImage.toJpeg(imageRef.current, {
+          quality: 0.95,
+          width: 320,
+          height: 440,
+        });
+
+        let link = document.createElement('a');
+        link.download = 'sticker-smash.jpeg';
+        link.href = dataURL;
+        link.click();
+      } catch (error) {
+        alert('An error occurred. Please try again.');
+      }
     }
   };
 
